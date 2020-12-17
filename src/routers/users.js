@@ -61,13 +61,13 @@ router.patch('/users/:id', async (req, res) => {
     }
 
     try {
-        //  Options provided
-        //  new - Returns the new user object and not the old
-        //  runValidators - Run validation for the updated data
-
         //  req.params.id - Grabs the ID from the URL
         //  req.body - An object that contains key/value pairs sent to the server
-        const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        const user = await User.findById(req.params.id);
+
+        updates.forEach((update) => user[update] = req.body[update])
+
+        await user.save();
 
         if(!user){
             return res.status(404).send();

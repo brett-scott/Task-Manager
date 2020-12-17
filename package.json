@@ -11,6 +11,7 @@
   "author": "Brett Scott",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "express": "^4.17.1",
     "mongoose": "^5.11.4",
     "validator": "^13.5.1"

@@ -62,10 +62,16 @@ router.patch('/tasks/:id', async (req, res) => {
             //  Options provided
             //  new - Returns the new task object and not the old
             //  runValidators - Run validation for the updated data
+            //  The code below cannot run using middleware when we update data, that's why we have multiple lines below
+            //const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
 
             //  req.params.id - Grabs the ID from the URL
             //  req.body - An object that contains key/value pairs sent to the server
-            const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+            const task = await Task.findById(req.params.id);
+            
+            updates.forEach((update) => task[update] = req.body[update])
+
+            await task.save();
 
             if(!task){
                 return res.status(404).send();

@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const bcrypt = require('bcryptjs');
 
-const User = mongoose.model('User', {
+//  Create the User Schema
+//  This allows us to take advantage of middleware
+const userSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -37,6 +40,20 @@ const User = mongoose.model('User', {
             }
         }
     }
-});
+})
+
+//  Runs the following before the save event
+userSchema.pre('save', async function(next){
+    const user = this;
+
+    //  Runs if the user is created and when they change the password property
+    if(user.isModified('password')){
+        user.password = await bcrypt.hash(user.password, 8);
+    }
+
+    next();
+})
+
+const User = mongoose.model('User', userSchema);
 
 module.exports = User;
