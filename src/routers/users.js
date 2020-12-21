@@ -61,29 +61,8 @@ router.get('/users/me', auth, async (req, res) => {
     res.send(req.user)
 });
 
-//  Get a user by ID
-router.get('/users/:id', async (req, res) => {
-    const _id = req.params.id;
-
-    const validID = mongoose.Types.ObjectId.isValid(_id);
-
-    if(!validID) return res.status(404).send();
-
-    try {
-        const user = await User.findById(_id);
-
-        if(!user){
-            return res.status(404).send()
-        }
-
-        res.send(user);
-    } catch(e) {
-        res.status(500).send()
-    }
-})
-
 //  Update a user by ID
-router.patch('/users/:id', async (req, res) => {
+router.patch('/users/me', auth, async (req, res) => {
     //  Get the keys from the request and return as an array
     const updates = Object.keys(req.body);
     //  Properties of the user object which are allowed to be updated/valid
@@ -97,39 +76,27 @@ router.patch('/users/:id', async (req, res) => {
     }
 
     try {
-        //  req.params.id - Grabs the ID from the URL
-        //  req.body - An object that contains key/value pairs sent to the server
-        const user = await User.findById(req.params.id);
+        updates.forEach((update) => req.user[update] = req.body[update])
 
-        updates.forEach((update) => user[update] = req.body[update])
+        await req.user.save();
 
-        await user.save();
-
-        if(!user){
-            return res.status(404).send();
-        }
-
-        res.send(user);
+        res.send(req.user);
     } catch (e) {
         res.status(400).send(e);
     }
 })
 
-router.delete('/users/:id', async (req, res) => {
-    const _id = req.params.id;
+router.delete('/users/me', auth, async (req, res) => {
+    const _id = req.user._id;
 
     const validID = mongoose.Types.ObjectId.isValid(_id);
 
     if(!validID) return res.status(404).send();
 
     try {
-        const user = await User.findByIdAndDelete(_id);
+        await req.user.remove();
 
-        if(!user){
-            return res.status(404).send();
-        }
-
-        res.send(user);
+        res.send(req.user);
     } catch(e) {
         res.status(500).send();
     }
