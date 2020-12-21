@@ -50,6 +50,18 @@ const userSchema = new mongoose.Schema({
     }]
 })
 
+
+//  Using toJSON will modify how the data is returned in JSON.stringify()
+userSchema.methods.toJSON = function() {
+    const user = this;
+    const userObject = user.toObject();
+
+    delete userObject.password;
+    delete userObject.tokens;
+
+    return userObject;
+}
+
 userSchema.methods.generateAuthToken = async function(){
     const user = this;
     //  Generate token
