@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const Task = require('./task.js');
 
 //  Create the User Schema
 //  This allows us to take advantage of middleware
@@ -108,6 +109,15 @@ userSchema.pre('save', async function(next){
     if(user.isModified('password')){
         user.password = await bcrypt.hash(user.password, 8);
     }
+
+    next();
+})
+
+//  Delete user tasks when user is deleted
+userSchema.pre('remove', async function(next){
+    const user = this;
+
+    await Task.deleteMany({ author: user._id })
 
     next();
 })
