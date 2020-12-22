@@ -50,6 +50,14 @@ const userSchema = new mongoose.Schema({
     }]
 })
 
+//  Virtual Property
+//  Data not stored in a DB, relationshiop between two entities
+userSchema.virtual('tasks', {
+    ref: 'Task',
+    localField: '_id',          //  Where local data is stored
+    foreignField: 'author'      //  Name of a field on the other entity
+})
+
 
 //  Using toJSON will modify how the data is returned in JSON.stringify()
 userSchema.methods.toJSON = function() {

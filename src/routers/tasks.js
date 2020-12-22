@@ -1,11 +1,15 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Task = require('../models/task.js');
+const auth = require('../middleware/auth.js');
 const router = new express.Router();
 
 //  Create a new task
-router.post('/tasks', async (req, res) => {
-    const task = new Task(req.body);
+router.post('/tasks', auth, async (req, res) => {
+    const task = new Task({
+        ...req.body,
+        author: req.user._id
+    })
 
     try {
         await task.save();
@@ -16,24 +20,26 @@ router.post('/tasks', async (req, res) => {
 });
 
 //  Get all tasks
-router.get('/tasks', async (req, res) => {
+router.get('/tasks', auth, async (req, res) => {
     try {
-        const tasks = await Task.find({});
-        res.send(tasks);
+        await req.user.populate('tasks').execPopulate();
+        res.send(req.user.tasks);
     } catch(e) {
         res.status(500).send();
     }
 })
 
 //  Get a task by ID
-router.get('/tasks/:id', async (req, res) => {
+router.get('/tasks/:id', auth, async (req, res) => {
     const _id = req.params.id;
 
     const validID = mongoose.Types.ObjectId.isValid(_id);
     if(!validID) return res.status(404).send();
 
     try {
-        const task = await Task.findById(_id);
+        // const task = await Task.findById(_id);
+        const task = await Task.findOne({ _id, author: req.user._id})
+
         if(!task){
             return res.status(404).send();
         }
@@ -45,7 +51,7 @@ router.get('/tasks/:id', async (req, res) => {
 })
 
 //  Update a task by ID
-router.patch('/tasks/:id', async (req, res) => {
+router.patch('/tasks/:id', auth, async (req, res) => {
     try {
         //  Get the keys from the request and return as an array
         const updates = Object.keys(req.body);
@@ -59,23 +65,14 @@ router.patch('/tasks/:id', async (req, res) => {
         }
 
         try {
-            //  Options provided
-            //  new - Returns the new task object and not the old
-            //  runValidators - Run validation for the updated data
-            //  The code below cannot run using middleware when we update data, that's why we have multiple lines below
-            //const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-
-            //  req.params.id - Grabs the ID from the URL
-            //  req.body - An object that contains key/value pairs sent to the server
-            const task = await Task.findById(req.params.id);
-            
-            updates.forEach((update) => task[update] = req.body[update])
-
-            await task.save();
+            const task = await Task.findOne({ _id: req.params.id, author: req.user._id })
 
             if(!task){
                 return res.status(404).send();
             }
+
+            updates.forEach((update) => task[update] = req.body[update])
+            await task.save();
 
             res.send(task);
         } catch(e) {
@@ -88,7 +85,7 @@ router.patch('/tasks/:id', async (req, res) => {
 })
 
 //  Delete a task by ID
-router.delete('/tasks/:id', async (req, res) => {
+router.delete('/tasks/:id', auth, async (req, res) => {
     const _id = req.params.id;
 
     const validID = mongoose.Types.ObjectId.isValid(_id);
@@ -96,7 +93,8 @@ router.delete('/tasks/:id', async (req, res) => {
     if(!validID) return res.status(404).send();
 
     try {
-        const task = await Task.findByIdAndDelete(_id);
+        // const task = await Task.findByIdAndDelete(_id);
+        const task = await Task.findOneAndDelete({_id: req.params.id, author: req.user._id })
 
         if(!task){
             return res.status(404).send();
