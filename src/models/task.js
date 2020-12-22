@@ -15,13 +15,9 @@ const taskSchema = new mongoose.Schema({
         required: true,
         ref: 'User'
     }
+}, {
+    timestamps: true
 });
-
-taskSchema.pre('save', function(next){
-    console.log('Task updated')
-
-    next();
-})
 
 const Task = mongoose.model('Task', taskSchema);
 
