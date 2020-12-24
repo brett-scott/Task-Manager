@@ -21,17 +21,30 @@ router.post('/tasks', auth, async (req, res) => {
 
 //  Get all tasks
 //  Also can filter through completed property if query provided (/tasks?completed=true)
+//  GET /tasks?limit=10&skip=0 (Limits 10 tasks) (Skip is the number of tasks to skip)
+//  GET /tasks?sortBy=createdAt_(asc/desc)
 router.get('/tasks', auth, async (req, res) => {
     const match = {}
+    const sort = {}
 
     if(req.query.completed){
         match.completed = req.query.completed === 'true'
     }
 
+    if(req.query.sortBy){
+        const parts = req.query.sortBy.split('_')
+        sort[parts[0]] = parts[1] === 'desc' ? -1 : 1   //  -1 is descending, 1 is ascending
+    }
+
     try {
         await req.user.populate({
             path: 'tasks',
-            match
+            match,
+            options: {
+                limit: parseInt(req.query.limit),
+                skip: parseInt(req.query.skip),
+                sort
+            }
         }).execPopulate();
         res.send(req.user.tasks);
     } catch(e) {
