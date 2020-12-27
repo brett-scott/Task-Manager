@@ -48,7 +48,10 @@ const userSchema = new mongoose.Schema({
             type: String,
             required: true
         }
-    }]
+    }],
+    avatar: {
+        type: Buffer    //  Used to store Binary
+    }
 }, {
     timestamps: true
 })
@@ -67,8 +70,10 @@ userSchema.methods.toJSON = function() {
     const user = this;
     const userObject = user.toObject();
 
+    //  Remove data you don't want sent back to the client
     delete userObject.password;
     delete userObject.tokens;
+    delete userObject.avatar;
 
     return userObject;
 }
