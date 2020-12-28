@@ -1,7 +1,8 @@
-const mongoose = require('mongoose');
-const validator = require('validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const validator = require('validator');
+
 const Task = require('./task.js');
 
 //  Create the User Schema
@@ -81,7 +82,7 @@ userSchema.methods.toJSON = function() {
 userSchema.methods.generateAuthToken = async function(){
     const user = this;
     //  Generate token
-    const token = jwt.sign({ _id: user._id.toString() }, 'asecretphrase')
+    const token = jwt.sign({ _id: user._id.toString() }, process.env.JWT_SECRET)
 
     //  Add the token onto the user instance
     user.tokens = user.tokens.concat({ token })

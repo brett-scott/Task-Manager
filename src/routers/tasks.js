@@ -1,7 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
+
 const Task = require('../models/task.js');
 const auth = require('../middleware/auth.js');
+
 const router = new express.Router();
 
 //  Create a new task

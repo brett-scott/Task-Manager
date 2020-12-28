@@ -1,10 +1,14 @@
+//  NPM Modules
 const express = require('express');
 const mongoose = require('mongoose');
-const User = require('../models/user.js');
-const auth = require('../middleware/auth.js');
-const router = new express.Router();
 const multer = require('multer');
 const sharp = require('sharp');
+const { sendWelcomeEmail, sendCancelEmail } = require('../emails/account.js');
+
+const User = require('../models/user.js');
+const auth = require('../middleware/auth.js');
+
+const router = new express.Router();
 
 //  Middleware to upload avatar images
 const upload = multer({
@@ -27,6 +31,8 @@ router.post('/users', async (req, res) => {
     try {
         //  Save user first to see it's valid
         await user.save()
+        //  Don't need to wait for SendGrid's servers so we don't need to await
+        sendWelcomeEmail(user.email, user.name);
         //  Generate token for the user so they don't need to login after registering
         const token = await user.generateAuthToken();
         res.status(201).send({ user, token })
@@ -140,6 +146,8 @@ router.delete('/users/me', auth, async (req, res) => {
 
     try {
         await req.user.remove();
+
+        sendCancelEmail(req.user.email, req.user.name);
 
         res.send(req.user);
     } catch(e) {
