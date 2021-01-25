@@ -7,11 +7,14 @@ const { userOneId, userOne, setupDatabase } = require('./fixtures/db.js');
 beforeEach(setupDatabase);
 
 test('Should signup a new user', async () => {
-    const response = await request(app).post('/users').send({
+    const response = await request(app)
+    .post('/users')
+    .send({
         name: 'Brett Scott',
-        email: 'br3ttscott@gmail.com',
+        email: 'brett@example.com',
         password: 'Str0ngString123!'
-    }).expect(201)
+    })
+    .expect(201)
 
     //  Assert that the database inserted correctly
     const user = await User.findById(response.body.user._id)
@@ -21,7 +24,7 @@ test('Should signup a new user', async () => {
     expect(response.body).toMatchObject({
         user: {
             name: 'Brett Scott',
-            email: 'br3ttscott@gmail.com',
+            email: 'brett@example.com',
         },
         token: user.tokens[0].token
     })
@@ -31,10 +34,13 @@ test('Should signup a new user', async () => {
 })
 
 test('Should login existing user', async () => {
-    const response = await request(app).post('/users/login').send({
-        email: userOne.email,
-        password: userOne.password
-    }).expect(200)
+    const response = await request(app)
+        .post('/users/login')
+        .send({
+            email: userOne.email,
+            password: userOne.password
+        })
+        .expect(200)
 
     //  Check that a second token is created
     const user = await User.findById(userOneId);
@@ -42,10 +48,13 @@ test('Should login existing user', async () => {
 })
 
 test('Should fail login', async () => {
-    await request(app).post('/users/login').send({
-        email: 'fake@email.com',
-        password: 'notr3al123'
-    }).expect(400)
+    await request(app)
+        .post('/users/login')
+        .send({
+            email: 'fake@email.com',
+            password: 'notr3al123'
+        })
+        .expect(400)
 })
 
 test('Get profile for user', async () => {
@@ -114,4 +123,49 @@ test('Should not update invalid user fields', async () => {
             location: "Antarctica"
         })
         .expect(400)
+})
+
+test('Should not sign up with invalid email/password', async () => {
+    //  Check invalid email
+    await request(app)
+        .post('/users')
+        .send({
+            name: 'Jerry',
+            email: 'Jerry email',
+            password: 'Str0ngString123!'
+        })
+        .expect(400)
+
+    //  Check invalid password
+    await request(app)
+        .post('/users')
+        .send({
+            name: 'Jerry',
+            email: 'jerry@example.com',
+            password: '2short'
+        })
+        .expect(400)
+})
+
+test('Should not update user not authenticated', async () => {
+    await request(app)
+        .patch('/users/me')
+        .send({
+            name: "Hacker Man"
+        })
+        .expect(401)
+})
+
+test('Should not update user with invalid email/password', async () => {
+    await request(app)
+        .patch('/users/me')
+        .set('Authorization', `Bearer ${userOne.tokens[0].token}`)
+        .send({
+            email: 'new email.com'
+        })
+        .expect(400)
+
+        //  Check the email in the DB is still the same as the one we defined
+        const user = await User.findById(userOneId);
+        expect(user.email).toBe(userOne.email)
 })
